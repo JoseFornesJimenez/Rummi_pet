@@ -5,6 +5,8 @@
 #include "gif_manager.h"
 #include <Adafruit_NeoPixel.h>
 #include "ftplayer.h"
+#include "ota_web.h"
+#include "comm_manager.h"
 // GIFs
 #include "gifs/inicio.h"
 #include "gifs/normal.h"
@@ -39,12 +41,34 @@ int gifState = 0; // índice del GIF actual
 int lastGifState = 0;
 const unsigned long gifInterval = 1000; // ms
 
+void showWiFiStatusOnScreen() {
+  tft.fillScreen(TFT_WHITE);
+  tft.setTextColor(TFT_BLACK, TFT_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(10, 30);
+  if (WiFi.status() == WL_CONNECTED) {
+    tft.println("WiFi: Conectado");
+    tft.setCursor(10, 60);
+    tft.print("IP: ");
+    tft.println(WiFi.localIP());
+  } else {
+    tft.println("WiFi: NO conectado");
+    tft.setCursor(10, 60);
+    tft.print("IP: ");
+    tft.println("-");
+  }
+  delay(2500); // Muestra la info 2.5 segundos
+}
+
 void setup() {
   Serial.begin(115200); // Para depuración
   delay(1000); // Espera a que el puerto serie esté listo
   tft.begin();
   tft.setRotation(0);
   tft.fillScreen(TFT_BLACK);
+
+  setupOTA(); // Inicializa WiFi y servidor web
+  showWiFiStatusOnScreen(); // Muestra IP y estado WiFi antes de continuar
 
   gif.begin(BIG_ENDIAN_PIXELS);
 
@@ -158,5 +182,6 @@ void loop() {
     lastGifState = gifState;
   }
   gifManager.play();
+  handleWebServer(); // Atiende peticiones web en cada loop
   yield(); // Por si acaso
 }
