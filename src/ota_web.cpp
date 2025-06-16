@@ -96,40 +96,30 @@ String pastelFullPage() {
   return html;
 }
 void setupOTA() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin("REINACASA", "Elpatiodemicasa34"); // Clave correcta
-  unsigned long startAttemptTime = millis();
-  bool connected = false;
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
-    delay(200);
-  }
-  connected = (WiFi.status() == WL_CONNECTED);
-  if (!connected) {
-    Serial.println("[AP] Intentando activar modo AP...");
-    WiFi.disconnect(true, true);
-    delay(200);
-    WiFi.mode(WIFI_AP);
-    delay(200);
-    bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1); // Sin clave, canal 1
-    delay(500);
-    Serial.print("[AP] Resultado WiFi.softAP: ");
-    Serial.println(apResult ? "OK" : "FALLO");
-    Serial.print("[AP] IP: ");
-    Serial.println(WiFi.softAPIP());
-    dnsServer.start(53, "*", WiFi.softAPIP());
-    // Mostrar en pantalla TFT el estado AP
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLACK, TFT_WHITE);
-    tft.setTextSize(2);
-    tft.setCursor(10, 30);
-    tft.println("Modo AP");
-    tft.setCursor(10, 60);
-    tft.print("Red: Rummi_pet_AP");
-    tft.setCursor(10, 90);
-    tft.print("IP: ");
-    tft.println(WiFi.softAPIP());
-    delay(3000);
-  }
+  Serial.println("[AP] Forzando modo AP desde el inicio...");
+  WiFi.disconnect(true, true);
+  delay(200);
+  WiFi.mode(WIFI_AP);
+  delay(200);
+  bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1); // Sin clave, canal 1
+  delay(500);
+  Serial.print("[AP] Resultado WiFi.softAP: ");
+  Serial.println(apResult ? "OK" : "FALLO");
+  Serial.print("[AP] IP: ");
+  Serial.println(WiFi.softAPIP());
+  dnsServer.start(53, "*", WiFi.softAPIP());
+  // Mostrar en pantalla TFT el estado AP
+  tft.fillScreen(TFT_WHITE);
+  tft.setTextColor(TFT_BLACK, TFT_WHITE);
+  tft.setTextSize(2);
+  tft.setCursor(10, 30);
+  tft.println("Modo AP");
+  tft.setCursor(10, 60);
+  tft.print("Red: Rummi_pet_AP");
+  tft.setCursor(10, 90);
+  tft.print("IP: ");
+  tft.println(WiFi.softAPIP());
+  delay(3000);
   startAsyncScan();
   server.on("/", []() {
     server.send(200, "text/html", pastelFullPage());
