@@ -111,31 +111,46 @@ void showWiFiConnectedScreen() {
   delay(2500);
 }
 void setupOTA() {
-  Serial.println("[AP] Forzando modo AP desde el inicio...");
-  WiFi.disconnect(true, true);
-  delay(200);
-  WiFi.mode(WIFI_AP);
-  delay(200);
-  bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1);
-  WiFi.setTxPower(WIFI_POWER_8_5dBm); // Solución para ESP32-C3 mini: AP visible
-  delay(500);
-  Serial.print("[AP] Resultado WiFi.softAP: ");
-  Serial.println(apResult ? "OK" : "FALLO");
-  Serial.print("[AP] IP: ");
-  Serial.println(WiFi.softAPIP());
-  dnsServer.start(53, "*", WiFi.softAPIP());
-  // Mostrar en pantalla TFT el estado AP
-  tft.fillScreen(TFT_WHITE);
-  tft.setTextColor(TFT_BLACK, TFT_WHITE);
-  tft.setTextSize(2);
-  tft.setCursor(10, 30);
-  tft.println("Modo AP");
-  tft.setCursor(10, 60);
-  tft.print("Red: Rummi_pet_AP");
-  tft.setCursor(10, 90);
-  tft.print("IP: ");
-  tft.println(WiFi.softAPIP());
-  delay(3000);
+  String ssid, pass;
+  preferences.begin("wifi", true);
+  ssid = preferences.getString("ssid", "");
+  pass = preferences.getString("pass", "");
+  preferences.end();
+  bool connected = false;
+  if (ssid.length() > 0) {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
+      delay(200);
+    }
+    connected = (WiFi.status() == WL_CONNECTED);
+    if (connected) {
+      showWiFiConnectedScreen();
+    }
+  }
+  if (!connected) {
+    WiFi.disconnect(true, true);
+    delay(200);
+    WiFi.mode(WIFI_AP);
+    delay(200);
+    bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1);
+    WiFi.setTxPower(WIFI_POWER_8_5dBm);
+    delay(500);
+    dnsServer.start(53, "*", WiFi.softAPIP());
+    // Mostrar en pantalla TFT el estado AP
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLACK, TFT_WHITE);
+    tft.setTextSize(2);
+    tft.setCursor(10, 30);
+    tft.println("Modo AP");
+    tft.setCursor(10, 60);
+    tft.print("Red: Rummi_pet_AP");
+    tft.setCursor(10, 90);
+    tft.print("IP: ");
+    tft.println(WiFi.softAPIP());
+    delay(3000);
+  }
   startAsyncScan();
   server.on("/", []() {
     server.send(200, "text/html", pastelFullPage());
@@ -180,25 +195,6 @@ void setupOTA() {
     server.send(302, "text/plain", "");
   });
   server.begin();
-
-  String ssid, pass;
-  preferences.begin("wifi", true);
-  ssid = preferences.getString("ssid", "");
-  pass = preferences.getString("pass", "");
-  preferences.end();
-  bool connected = false;
-  if (ssid.length() > 0) {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid.c_str(), pass.c_str());
-    unsigned long startAttemptTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
-      delay(200);
-    }
-    connected = (WiFi.status() == WL_CONNECTED);
-    if (connected) {
-      showWiFiConnectedScreen();
-    }
-  }
 }
 void handleWebServer() {
   server.handleClient();
