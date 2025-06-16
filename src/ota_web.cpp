@@ -4,6 +4,7 @@
 #include <DNSServer.h>
 #include "comm_manager.h"
 #include <Update.h>
+#include <TFT_eSPI.h>
 
 WebServer server(80);
 Preferences preferences;
@@ -96,7 +97,7 @@ String pastelFullPage() {
 }
 void setupOTA() {
   WiFi.mode(WIFI_STA);
-  WiFi.begin("REINACASA", "1234");
+  WiFi.begin("REINACASA", "Elpatiodemicasa34"); // Clave correcta
   unsigned long startAttemptTime = millis();
   bool connected = false;
   while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
@@ -110,6 +111,18 @@ void setupOTA() {
     WiFi.mode(WIFI_AP);
     WiFi.softAP("Rummi_pet_AP");
     dnsServer.start(53, "*", WiFi.softAPIP());
+    // Mostrar en pantalla TFT el estado AP
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLACK, TFT_WHITE);
+    tft.setTextSize(2);
+    tft.setCursor(10, 30);
+    tft.println("Modo AP");
+    tft.setCursor(10, 60);
+    tft.print("Red: Rummi_pet_AP");
+    tft.setCursor(10, 90);
+    tft.print("IP: ");
+    tft.println(WiFi.softAPIP());
+    delay(2500);
   }
   startAsyncScan();
   server.on("/", []() {
@@ -149,9 +162,15 @@ void setupOTA() {
       Update.end(true);
     }
   });
+  // Portal cautivo: redirige todo a la web
+  server.onNotFound([]() {
+    server.sendHeader("Location", "/", true);
+    server.send(302, "text/plain", "");
+  });
   server.begin();
 }
 void handleWebServer() {
   server.handleClient();
 }
 void drawWiFiStatusIcon() {}
+extern TFT_eSPI tft;
