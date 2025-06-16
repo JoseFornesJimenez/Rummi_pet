@@ -10,4 +10,4 @@
 #define TFT_SCLK 8
 
 #define LOAD_GLCD
-#define SPI_FREQUENCY  25000000
+#define SPI_FREQUENCY  35000000

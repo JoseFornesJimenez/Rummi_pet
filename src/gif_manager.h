@@ -17,7 +17,7 @@ public:
 private:
   static void draw(GIFDRAW *pDraw);
   static TFT_eSPI* _tft;
-  static uint16_t _lineBuffer[256];
+  static uint16_t _lineBuffer[240]; // Ajusta el buffer a 240 para 240x240
   AnimatedGIF* _gif;
   const GIFEntry* _currentGIF;
 };

@@ -189,6 +189,7 @@
  .pio/libdeps/esp32-c3-devkitm-1/AnimatedGIF/src/AnimatedGIF.h \
  src/gif_manager.h \
  .pio/libdeps/esp32-c3-devkitm-1/Adafruit\ NeoPixel/Adafruit_NeoPixel.h \
- include/gifs/guino.h include/gifs/estrella.h include/gifs/inicio.h \
- include/gifs/normal.h include/gifs/mareado.h include/gifs/corazones.h \
- include/gifs/movimiento1.h include/gifs/muerto.h include/gifs/baba.h
+ include/ftplayer.h \
+ .pio/libdeps/esp32-c3-devkitm-1/DFRobotDFPlayerMini/DFRobotDFPlayerMini.h \
+ include/gifs/inicio.h include/gifs/normal.h include/gifs/movimiento.h \
+ include/gifs/hablar.h include/gifs/mareado.h
