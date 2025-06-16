@@ -105,14 +105,17 @@ void setupOTA() {
   }
   connected = (WiFi.status() == WL_CONNECTED);
   if (!connected) {
+    Serial.println("[AP] Intentando activar modo AP...");
     WiFi.disconnect(true, true);
     delay(200);
-    WiFi.mode(WIFI_OFF);
-    delay(500);
     WiFi.mode(WIFI_AP);
     delay(200);
-    WiFi.softAP("Rummi_pet_AP", "12345678", 6); // AP con clave y canal 6
+    bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1); // Sin clave, canal 1
     delay(500);
+    Serial.print("[AP] Resultado WiFi.softAP: ");
+    Serial.println(apResult ? "OK" : "FALLO");
+    Serial.print("[AP] IP: ");
+    Serial.println(WiFi.softAPIP());
     dnsServer.start(53, "*", WiFi.softAPIP());
     // Mostrar en pantalla TFT el estado AP
     tft.fillScreen(TFT_WHITE);
@@ -123,8 +126,6 @@ void setupOTA() {
     tft.setCursor(10, 60);
     tft.print("Red: Rummi_pet_AP");
     tft.setCursor(10, 90);
-    tft.print("Clave: 12345678");
-    tft.setCursor(10, 120);
     tft.print("IP: ");
     tft.println(WiFi.softAPIP());
     delay(3000);
