@@ -106,10 +106,13 @@ void setupOTA() {
   connected = (WiFi.status() == WL_CONNECTED);
   if (!connected) {
     WiFi.disconnect(true, true);
+    delay(200);
     WiFi.mode(WIFI_OFF);
     delay(500);
     WiFi.mode(WIFI_AP);
-    WiFi.softAP("Rummi_pet_AP");
+    delay(200);
+    WiFi.softAP("Rummi_pet_AP", "12345678", 6); // AP con clave y canal 6
+    delay(500);
     dnsServer.start(53, "*", WiFi.softAPIP());
     // Mostrar en pantalla TFT el estado AP
     tft.fillScreen(TFT_WHITE);
@@ -120,9 +123,11 @@ void setupOTA() {
     tft.setCursor(10, 60);
     tft.print("Red: Rummi_pet_AP");
     tft.setCursor(10, 90);
+    tft.print("Clave: 12345678");
+    tft.setCursor(10, 120);
     tft.print("IP: ");
     tft.println(WiFi.softAPIP());
-    delay(2500);
+    delay(3000);
   }
   startAsyncScan();
   server.on("/", []() {
