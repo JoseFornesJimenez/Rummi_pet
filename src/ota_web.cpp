@@ -95,6 +95,21 @@ String pastelFullPage() {
   html += "</div></body></html>";
   return html;
 }
+void showWiFiConnectedScreen() {
+  tft.fillScreen(0xEAF6FB); // Azul pastel claro
+  tft.setTextColor(0x7B8FA1, 0xEAF6FB); // Gris azulado
+  tft.setTextSize(2);
+  tft.setCursor(10, 30);
+  tft.println("¡Conectado a WiFi!");
+  tft.setTextSize(1);
+  tft.setCursor(10, 60);
+  tft.print("Red: ");
+  tft.println(WiFi.SSID());
+  tft.setCursor(10, 80);
+  tft.print("IP: ");
+  tft.println(WiFi.localIP());
+  delay(2500);
+}
 void setupOTA() {
   Serial.println("[AP] Forzando modo AP desde el inicio...");
   WiFi.disconnect(true, true);
@@ -131,7 +146,7 @@ void setupOTA() {
       preferences.putString("ssid", server.arg("ssid"));
       preferences.putString("pass", server.arg("pass"));
       preferences.end();
-      server.send(200, "text/plain", "Guardado. Reiniciando...");
+      server.send(200, "text/plain", "Guardado. Reiniciando y conectando a la nueva red...");
       delay(1000);
       ESP.restart();
     } else {
@@ -165,6 +180,25 @@ void setupOTA() {
     server.send(302, "text/plain", "");
   });
   server.begin();
+
+  String ssid, pass;
+  preferences.begin("wifi", true);
+  ssid = preferences.getString("ssid", "");
+  pass = preferences.getString("pass", "");
+  preferences.end();
+  bool connected = false;
+  if (ssid.length() > 0) {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
+      delay(200);
+    }
+    connected = (WiFi.status() == WL_CONNECTED);
+    if (connected) {
+      showWiFiConnectedScreen();
+    }
+  }
 }
 void handleWebServer() {
   server.handleClient();
