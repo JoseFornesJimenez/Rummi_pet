@@ -101,7 +101,8 @@ void setupOTA() {
   delay(200);
   WiFi.mode(WIFI_AP);
   delay(200);
-  bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1); // Sin clave, canal 1
+  bool apResult = WiFi.softAP("Rummi_pet_AP", NULL, 1);
+  WiFi.setTxPower(WIFI_POWER_8_5dBm); // Solución para ESP32-C3 mini: AP visible
   delay(500);
   Serial.print("[AP] Resultado WiFi.softAP: ");
   Serial.println(apResult ? "OK" : "FALLO");

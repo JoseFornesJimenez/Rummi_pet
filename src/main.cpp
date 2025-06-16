@@ -62,19 +62,47 @@ void showWiFiStatusOnScreen() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(115200); // Para depuración
+  delay(1000); // Espera a que el puerto serie esté listo
+  tft.begin();
+  tft.setRotation(0);
+  tft.fillScreen(TFT_BLACK);
+
+  setupOTA(); // Inicializa WiFi y servidor web (con lógica completa)
+  showWiFiStatusOnScreen(); // Muestra IP y estado WiFi antes de continuar
+
+  gif.begin(BIG_ENDIAN_PIXELS);
+
+  // Inicializa la tira de LEDs
+  strip.begin();
+  strip.show(); // Apaga todos los LEDs
+
+  // Inicializa Serial1 en los pines correctos para ESP32C3 antes de usar DFPlayer
+  Serial1.begin(9600, SERIAL_8N1, 20, 21); // RX=20, TX=21
+  delay(100);
+  // Inicializa el reproductor DFPlayer y muestra estado con LEDs
+  bool dfplayerOk = ftplayer.begin(Serial1);
   delay(1000);
-  Serial.println("[AP] Iniciando modo AP...");
-  WiFi.disconnect(true, true);
-  delay(200);
-  WiFi.mode(WIFI_AP);
-  delay(200);
-  bool apResult = WiFi.softAP("ESP32C3_AP", NULL, 1); // Sin clave, canal 1
-  delay(500);
-  Serial.print("[AP] Resultado WiFi.softAP: ");
-  Serial.println(apResult ? "OK" : "FALLO");
-  Serial.print("[AP] IP: ");
-  Serial.println(WiFi.softAPIP());
+  if (dfplayerOk) {
+    // Verde: DFPlayer conectado correctamente
+    for (int i = 0; i < NUM_LEDS; i++) strip.setPixelColor(i, strip.Color(0, 150, 0));
+    strip.show();
+    ftplayer.playSong(1);
+    delay(1000);
+  } else {
+    // Rojo: Error de comunicación con DFPlayer
+    for (int i = 0; i < NUM_LEDS; i++) strip.setPixelColor(i, strip.Color(150, 0, 0));
+    strip.show();
+    while (1) delay(1000); // Detén el programa para depuración
+  }
+
+  // Apaga los LEDs antes de continuar
+  strip.clear();
+  strip.show();
+
+  // Muestra el primer GIF
+  gifManager.setGIF({ inicio, sizeof(inicio) });
+  gifManager.play();
 }
 
 void loop() {
