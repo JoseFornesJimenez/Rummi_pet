@@ -7,6 +7,7 @@
 #include "ftplayer.h"
 #include "ota_web.h"
 #include "comm_manager.h"
+#include <WiFi.h> // Se agrega para definir WL_CONNECTED y funciones WiFi
 // GIFs
 #include "gifs/inicio.h"
 #include "gifs/normal.h"
