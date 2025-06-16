@@ -63,13 +63,11 @@ void showWiFiStatusOnScreen() {
 
 void setup() {
   Serial.begin(115200); // Para depuración
-  delay(1000); // Espera a que el puerto serie esté listo
+  setupOTA(); // PRIMERO: crea el AP antes de cualquier periférico
+  delay(500); // Espera breve para asegurar AP
   tft.begin();
   tft.setRotation(0);
   tft.fillScreen(TFT_BLACK);
-
-  setupOTA(); // Inicializa WiFi y servidor web
-  showWiFiStatusOnScreen(); // Muestra IP y estado WiFi antes de continuar
 
   gif.begin(BIG_ENDIAN_PIXELS);
 
