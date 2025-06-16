@@ -3,6 +3,8 @@
 #include <Preferences.h>
 #include <DNSServer.h>
 #include "comm_manager.h"
+#include <Update.h>
+
 WebServer server(80);
 Preferences preferences;
 DNSServer dnsServer;
@@ -44,15 +46,108 @@ String pastelPage() {
   html += "</div></body></html>";
   return html;
 }
+void startAsyncScan() {
+  if (!scanInProgress) {
+    WiFi.scanNetworks(true);
+    scanInProgress = true;
+  }
+}
+void updateScanResults() {
+  int n = WiFi.scanComplete();
+  if (n == WIFI_SCAN_FAILED || n == WIFI_SCAN_RUNNING) return;
+  scannedNetworks = "";
+  for (int i = 0; i < n; ++i) {
+    scannedNetworks += "<option value='" + WiFi.SSID(i) + "'>" + WiFi.SSID(i) + " (" + String(WiFi.RSSI(i)) + " dBm)</option>";
+  }
+  WiFi.scanDelete();
+  scanInProgress = false;
+}
+String pastelFullPage() {
+  updateScanResults();
+  String html = "<html><head><title>Rummi_pet Config</title>";
+  html += pastelStyle;
+  html += "</head><body><div class='card'>";
+  html += "<h1>Rummi_pet</h1>";
+  html += "<form action='/update' method='POST' enctype='multipart/form-data'>";
+  html += "<input type='file' name='update'><br>";
+  html += "<input class='btn' type='submit' value='Actualizar firmware'>";
+  html += "</form>";
+  html += "<form action='/wifi' method='POST'>";
+  html += "<select name='ssid'>" + scannedNetworks + "</select><br>";
+  html += "<input type='password' name='pass' placeholder='Contraseña'><br>";
+  html += "<input class='btn' type='submit' value='Guardar WiFi'>";
+  html += "</form>";
+  html += "<form action='/resetwifi' method='POST'>";
+  html += "<input class='btn' type='submit' value='Borrar configuración WiFi'>";
+  html += "</form>";
+  html += "<h2>Dispositivos ESP-NOW cercanos</h2>";
+  html += "<div class='peer-list'>";
+  asyncScanEspNowPeers();
+  if (foundPeers.size() == 0) {
+    html += "<div>No se detectaron dispositivos.</div>";
+  } else {
+    for (EspNowPeer& peer : foundPeers) {
+      html += "<div class='peer'>" + peer.macStr + "</div>";
+    }
+  }
+  html += "</div>";
+  html += "</div></body></html>";
+  return html;
+}
 void setupOTA() {
   WiFi.mode(WIFI_STA);
-  WiFi.begin("REINACASA", "Elpatiodemicasa34"); // Conexión predeterminada
+  WiFi.begin("REINACASA", "1234");
   unsigned long startAttemptTime = millis();
+  bool connected = false;
   while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 8000) {
     delay(200);
   }
+  connected = (WiFi.status() == WL_CONNECTED);
+  if (!connected) {
+    WiFi.disconnect(true, true);
+    WiFi.mode(WIFI_OFF);
+    delay(500);
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP("Rummi_pet_AP");
+    dnsServer.start(53, "*", WiFi.softAPIP());
+  }
+  startAsyncScan();
   server.on("/", []() {
-    server.send(200, "text/html", pastelPage());
+    server.send(200, "text/html", pastelFullPage());
+  });
+  server.on("/wifi", HTTP_POST, []() {
+    if (server.hasArg("ssid") && server.hasArg("pass")) {
+      preferences.begin("wifi", false);
+      preferences.putString("ssid", server.arg("ssid"));
+      preferences.putString("pass", server.arg("pass"));
+      preferences.end();
+      server.send(200, "text/plain", "Guardado. Reiniciando...");
+      delay(1000);
+      ESP.restart();
+    } else {
+      server.send(400, "text/plain", "Faltan campos");
+    }
+  });
+  server.on("/resetwifi", HTTP_POST, []() {
+    preferences.begin("wifi", false);
+    preferences.clear();
+    preferences.end();
+    server.send(200, "text/plain", "WiFi borrado. Reinicia.");
+  });
+  server.on("/update", HTTP_POST, []() {
+    server.sendHeader("Connection", "close");
+    server.send(200, "text/plain", Update.hasError() ? "Fallo al actualizar" : "Actualizado OK. Reiniciando...");
+    delay(1000);
+    ESP.restart();
+  }, []() {
+    HTTPUpload& upload = server.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Update.begin();
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      Update.write(upload.buf, upload.currentSize);
+    } else if (upload.status == UPLOAD_FILE_END) {
+      Update.end(true);
+    }
   });
   server.begin();
 }
